@@ -1,61 +1,61 @@
 import streamlit as st
 import cv2
+import numpy as np
 from detector import process_frame
 from database import log_event, get_logs
 
 st.set_page_config(page_title="Baaz Ki Nazar - Safety Dashboard", layout="wide")
 
 st.title("🦅 Baaz Ki Nazar — Factory Floor Safety Monitoring")
-st.write("Click the button below to capture a snapshot and inspect for safety violations.")
+st.write("Take a snapshot or upload an image to inspect for safety violations.")
 
 col1, col2 = st.columns([2, 1])
 
-# Initialize session state variables to store the image and detection results across button clicks
-if "captured_image" not in st.session_state:
-    st.session_state.captured_image = None
-if "status" not in st.session_state:
-    st.session_state.status = "SAFE"
-if "violation" not in st.session_state:
-    st.session_state.violation = "None"
-
 with col1:
-    st.subheader("📹 Single Frame Capture")
+    st.subheader("📹 Capture or Upload Image")
     
-    # 1. Click this button to capture one frame from the camera
-    if st.button("📸 Capture & Analyze Frame"):
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        cap.release()  # Immediately release the camera after capturing one frame
-        
-        if ret:
-            # Run detection on the single captured frame
-            annotated_frame, status, violation = process_frame(frame)
-            
-            # Store results in session state
-            st.session_state.captured_image = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
-            st.session_state.status = status
-            st.session_state.violation = violation
-            
-            # Log event if a violation is detected
-            if status == "CRITICAL":
-                log_event(violation, status)
-        else:
-            st.error("Failed to capture image from camera.")
+    # 1. Option to use webcam directly via the browser
+    img_file_buffer = st.camera_input("Take a picture from your camera")
+    
+    # 2. Backup option to upload an image file
+    uploaded_file = st.file_uploader("Or upload an image", type=["jpg", "jpeg", "png"])
 
-    # 2. Display the captured snapshot
-    if st.session_state.captured_image is not None:
-        st.image(st.session_state.captured_image, caption="Analyzed Snapshot", use_container_width=True)
-    else:
-        st.info("Click 'Capture & Analyze Frame' to take a snapshot.")
+    image_bytes = None
+    if img_file_buffer is not None:
+        image_bytes = img_file_buffer.getvalue()
+    elif uploaded_file is not None:
+        image_bytes = uploaded_file.getvalue()
+
+    if image_bytes is not None:
+        # Convert image bytes to OpenCV format
+        file_bytes = np.asarray(bytearray(image_bytes), dtype=np.uint8)
+        frame = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+        # Run detection on the captured/uploaded image
+        annotated_frame, status, violation = process_frame(frame)
+
+        # Display analyzed image
+        frame_rgb = cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB)
+        st.image(frame_rgb, caption="Analyzed Image", use_container_width=True)
+
+        # Update and Log Status
+        if status == "CRITICAL":
+            log_event(violation, status)
+            st.session_state["latest_status"] = (status, violation)
+        else:
+            st.session_state["latest_status"] = (status, "None")
 
 with col2:
     st.subheader("⚠️ Safety Status")
     
-    # Display status for the captured frame
-    if st.session_state.status == "CRITICAL":
-        st.error(f"STATUS: {st.session_state.status}\n\nViolation: {st.session_state.violation}")
+    if "latest_status" in st.session_state:
+        status, violation = st.session_state["latest_status"]
+        if status == "CRITICAL":
+            st.error(f"STATUS: {status}\n\nViolation: {violation}")
+        else:
+            st.success(f"STATUS: {status}")
     else:
-        st.success(f"STATUS: {st.session_state.status}")
+        st.info("STATUS: Awaiting input")
         
     st.subheader("📋 Incident History")
     logs = get_logs()
