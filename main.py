@@ -7,11 +7,9 @@ from ultralytics import YOLO
 
 app = FastAPI(title="Baaz Ki Nazar API")
 
-# Load your custom YOLO safety model (trained on PPE + Fire/Smoke)
-# e.g., model = YOLO("models/best_safety_fire.pt")
+# Load YOLO model (swap with custom trained weights if available)
 model = YOLO("yolov8n.pt") 
 
-# Define critical hazards vs standard gear violations
 HAZARD_CLASSES = {
     "fire": "CRITICAL_HAZARD",
     "smoke": "CRITICAL_HAZARD",
@@ -37,13 +35,16 @@ def init_db():
 
 init_db()
 
+@app.get("/")
+def read_root():
+    return {"status": "Baaz Ki Nazar Backend Live"}
+
 @app.post("/detect/")
 async def detect_violations(file: UploadFile = File(...)):
     contents = await file.read()
     nparr = np.frombuffer(contents, np.uint8)
     frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
 
-    # Lower confidence threshold (conf=0.25) to catch early smoke density
     results = model(frame, conf=0.25)
     violations = []
 
@@ -56,7 +57,6 @@ async def detect_violations(file: UploadFile = File(...)):
             label = model.names[cls_id].lower()
             conf = float(box.conf[0])
 
-            # Check if the detected object is in our hazard or violation list
             if label in HAZARD_CLASSES:
                 severity = HAZARD_CLASSES[label]
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -75,7 +75,6 @@ async def detect_violations(file: UploadFile = File(...)):
 
     conn.commit()
     conn.close()
-
     return {"status": "success", "detected_violations": violations}
 
 @app.get("/logs/")
