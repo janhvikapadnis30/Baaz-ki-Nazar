@@ -3,12 +3,12 @@
   "name": "Baaz Ki Nazar — Factory Floor Safety",
   "icons": [
     {
-      "src": "/app/static/icon-192.png",
+      "src": "https://img.icons8.com/color/192/000000/falcon.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/app/static/icon-512.png",
+      "src": "https://img.icons8.com/color/512/000000/falcon.png",
       "type": "image/png",
       "sizes": "512x512"
     }
