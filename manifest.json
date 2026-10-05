@@ -1,0 +1,20 @@
+{
+  "short_name": "BaazKiNazar",
+  "name": "Baaz Ki Nazar — Factory Floor Safety",
+  "icons": [
+    {
+      "src": "/app/static/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/app/static/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0e1117",
+  "theme_color": "#ff4b4b",
+  "display": "standalone"
+}
