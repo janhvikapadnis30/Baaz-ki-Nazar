@@ -8,14 +8,14 @@ from ultralytics import YOLO
 app = FastAPI(title="Baaz Ki Nazar API")
 
 # Load YOLO model (swap with custom trained weights if available)
-model = YOLO("yolov8n.pt") 
+model = YOLO("best.pt")
 
 HAZARD_CLASSES = {
-    "fire": "CRITICAL_HAZARD",
-    "smoke": "CRITICAL_HAZARD",
-    "no_helmet": "GEAR_VIOLATION",
-    "no_vest": "GEAR_VIOLATION",
-    "no_goggles": "GEAR_VIOLATION"
+    "no-boots": "GEAR_VIOLATION",
+    "no-gloves": "GEAR_VIOLATION",
+    "no-goggles": "GEAR_VIOLATION",
+    "no-helmet": "GEAR_VIOLATION",
+    "no-vest": "GEAR_VIOLATION",
 }
 
 def init_db():
